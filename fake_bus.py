@@ -28,7 +28,7 @@ async def send_bus_coordinates(route):
                 await ws.send_message(json.dumps(
                     {"busId": route_name, "lat": lat, "lng": lng, "route": route_name}, ensure_ascii=False)
                 )
-                return
+                await trio.sleep(.1)
     except OSError as ose:
         print('Connection attempt failed: %s' % ose, file=stderr)
 
@@ -41,4 +41,5 @@ async def main():
 
 if __name__ == '__main__':
     trio.run(main)
+
 
