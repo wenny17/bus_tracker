@@ -7,7 +7,7 @@ import trio
 from trio_websocket import open_websocket_url
 
 from args import get_args
-from tools import load_routes, get_route_generator, generate_bus_id
+from tools import load_routes, get_route_generator, generate_bus_id, reconnect
 
 
 async def run_bus(route, bus_id, route_name, send_channel, timeout=1):
@@ -18,14 +18,11 @@ async def run_bus(route, bus_id, route_name, send_channel, timeout=1):
             await trio.sleep(timeout)
 
 
+@reconnect
 async def send_updates(server_address, receive_channel):
-    async with receive_channel:
-        try:
-            async with open_websocket_url(server_address) as ws:
-                async for data in receive_channel:
-                    await ws.send_message(data)
-        except OSError as ose:
-            print('Connection attempt failed: %s' % ose, file=stderr)
+    async with open_websocket_url(server_address) as ws:
+        async for data in receive_channel:
+            await ws.send_message(data)
 
 
 async def handle_dispatch(buses_per_route, routes_number, server_address, websocket_count=5, refresh_timeout=1):
@@ -37,7 +34,8 @@ async def handle_dispatch(buses_per_route, routes_number, server_address, websoc
                     route = get_route_generator(route_info["coordinates"])
                     bus_id = generate_bus_id(route_info["name"], bus_index)
 
-                    nursery.start_soon(run_bus, route, bus_id, route_info["name"], send_channel.clone(), refresh_timeout)
+                    nursery.start_soon(run_bus, route, bus_id, route_info["name"], send_channel.clone(),
+                                       refresh_timeout)
 
             for worker in range(websocket_count):
                 nursery.start_soon(send_updates, server_address, receive_channel.clone())

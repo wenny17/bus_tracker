@@ -8,7 +8,7 @@ WEBSOCKET_COUNT = 10
 UPDATE_TIMEOUT = 1
 
 try:
-    ROUTES_NUMBER = len(os.listdir('routes/'))
+    ROUTES_NUMBER = len(os.listdir(os.path.join(os.path.abspath(os.path.dirname(__file__)), "routes/")))
 except FileNotFoundError as e:
     message = "Add the 'routes/' directory  which contains the buses coordinates data"
     raise type(e)(e.strerror + "\n\t" + message)
