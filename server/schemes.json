@@ -1,0 +1,30 @@
+{
+  "window_bounds_schema": {
+    "type": "object",
+    "properties": {
+        "msgType": {"const": "newBounds"},
+        "data": {"properties": {
+            "east_lng": {"type": "number"},
+            "north_lat": {"type": "number"},
+            "south_lat": {"type": "number"},
+            "west_lng": {"type": "number"}
+            },
+            "additionalProperties": false,
+            "minProperties": 4
+        }
+    },
+    "required": ["data", "msgType"]
+
+  },
+  "bus_data_schema": {
+    "type": "object",
+    "properties": {
+        "busId": {"type": "string"},
+        "lat": {"type": "number"},
+        "lng": {"type": "number"},
+        "route": {"type": "string"}
+    },
+    "additionalProperties": false,
+    "minProperties": 4
+  }
+}
