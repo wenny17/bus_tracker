@@ -11,18 +11,22 @@ from tools import load_routes, get_route_generator, generate_bus_id, reconnect
 
 
 async def run_bus(route, bus_id, route_name, send_channel, timeout=1):
+    global dd
     async with send_channel:
         for lat, lng in route:
             bus_data = json.dumps({"busId": bus_id, "lat": lat, "lng": lng, "route": route_name}, ensure_ascii=False)
             await send_channel.send(bus_data)
-            await trio.sleep(timeout)
+            await trio.sleep(.1)
 
 
 @reconnect
 async def send_updates(server_address, receive_channel):
-    async with open_websocket_url(server_address) as ws:
+    client_stream = await trio.open_tcp_stream("127.0.0.1", 8080)
+    async with client_stream:
+        print("sender: started!")
         async for data in receive_channel:
-            await ws.send_message(data)
+            await client_stream.send_all(data.encode() + b"\n")
+
 
 
 async def handle_dispatch(buses_per_route, routes_number, server_address, websocket_count=5, refresh_timeout=1):
