@@ -11,12 +11,11 @@ from tools import load_routes, get_route_generator, generate_bus_id, reconnect
 
 
 async def run_bus(route, bus_id, route_name, send_channel, timeout=1):
-    global dd
     async with send_channel:
         for lat, lng in route:
             bus_data = json.dumps({"busId": bus_id, "lat": lat, "lng": lng, "route": route_name}, ensure_ascii=False)
             await send_channel.send(bus_data)
-            await trio.sleep(.1)
+            await trio.sleep(1)
 
 
 @reconnect

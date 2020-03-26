@@ -15,10 +15,9 @@ start = 99999999
 from liner import LineReader
 async def echo_server(server_stream):
     global f, i, start
-    if f:
-        f = 0
-        start = time.time()
-    print("GG")
+    # if f:
+    #     f = 0
+    #     start = time.time()
     linereader = LineReader(server_stream)
     try:
         while True:
@@ -29,9 +28,9 @@ async def echo_server(server_stream):
             # if time.time() - start > 1:
             #     print(i)
             #     exit()
-            if i > 23000:
-                print(time.time()-start)
-                exit()
+            # if i > 23000:
+            #     print(time.time()-start)
+            #     exit()
 
     except json.JSONDecodeError as exc:
         print(i)
@@ -49,7 +48,7 @@ async def _listen_browser(web_socket, bounds):
 
 
 async def send_buses(web_socket, bounds):
-    buses_inside = [bus_info.to_dict() for bus_info in buses.values() if bounds.is_inside(bus_info.lat, bus_info.lng)]
+    buses_inside = [bus_info for bus_info in buses.values() if bounds.is_inside(bus_info["lat"], bus_info["lng"])]
     await web_socket.send_message(json.dumps({
         "msgType": "Buses",
         "buses": buses_inside
@@ -57,8 +56,11 @@ async def send_buses(web_socket, bounds):
 
 
 async def _talk_to_browser(web_socket, bounds):
+    global i
     while True:
         await send_buses(web_socket, bounds)
+        print(i)
+        i = 0
         await trio.sleep(1)
 
 
