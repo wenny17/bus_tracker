@@ -1,66 +1,80 @@
+import asyncio
 import json
-from functools import partial
+import socket
 
-import trio
-from trio_websocket import serve_websocket, ConnectionClosed
+from aiohttp import web
+import uvloop
 
-from entities import Bus, WindowBounds
+from entities import WindowBounds
+
 
 buses = {}
 
-
-async def listen_bus_route_data(request):
-    """
-    Get data about buses position from web socket
-    """
-    web_socket = await request.accept()
+i = 0
+async def listen_browser(ws, bounds):
     while True:
-        try:
-            bus_data = json.loads(await web_socket.get_message())
-            buses[bus_data["busId"]] = Bus(**bus_data)
-        except ConnectionClosed:
-            break
+        async for msg in ws:
+            bounds.update(**json.loads(msg.data)["data"])
 
 
-async def _listen_browser(web_socket, bounds):
+async def talk_to_browser(ws, bounds):
+    global i
     while True:
-        windows_bounds = json.loads(await web_socket.get_message())
-        bounds.update(**windows_bounds["data"])
+        buses_inside = [bus_info for bus_info in buses.values() if bounds.is_inside(bus_info["lat"], bus_info["lng"])]
+        data = {
+            "msgType": "Buses",
+            "buses": buses_inside
+        }
+        await ws.send_str(json.dumps(data))
+        print(i)
+        i = 0
+        await asyncio.sleep(1)
 
 
-async def send_buses(web_socket, bounds):
-    buses_inside = [bus_info.to_dict() for bus_info in buses.values() if bounds.is_inside(bus_info.lat, bus_info.lng)]
-    await web_socket.send_message(json.dumps({
-        "msgType": "Buses",
-        "buses": buses_inside
-    }))
-
-
-async def _talk_to_browser(web_socket, bounds):
-    while True:
-        await send_buses(web_socket, bounds)
-        await trio.sleep(1)
-
-
-async def handle_browser_connection(request):
+async def websocket_handler(request):
+    print("Accept connection")
+    ws = web.WebSocketResponse()
     bounds = WindowBounds()
-    web_socket = await request.accept()
+
+    await ws.prepare(request)
+    await asyncio.gather(
+        listen_browser(ws, bounds),
+        talk_to_browser(ws, bounds)
+    )
+    print('websocket connection closed')
+    return ws
+
+
+async def socket_server(reader, writer):
+    global i
     try:
-        async with trio.open_nursery() as nursery:
-            nursery.start_soon(_listen_browser, web_socket, bounds)
-            nursery.start_soon(_talk_to_browser, web_socket, bounds)
-    except ConnectionClosed:
-        await trio.sleep(1)
+        while True:
+            data = await reader.readline()
+            message = data.decode()
+            bus = json.loads(message)
+            buses[bus["busId"]] = bus
+            i += 1
+    except (socket.gaierror,
+            ConnectionRefusedError,
+            ConnectionResetError):
+        pass
+    finally:
+        writer.close()
+        await writer.wait_closed()
 
 
-async def main():
-    open_data_socket = partial(serve_websocket, listen_bus_route_data, "127.0.0.1", 8080, ssl_context=None)
-    open_browser_socket = partial(serve_websocket, handle_browser_connection, "127.0.0.1", 8000, ssl_context=None)
-
-    async with trio.open_nursery() as nursery:
-        nursery.start_soon(open_data_socket)
-        nursery.start_soon(open_browser_socket)
+async def _start_background_tasks(app):
+    await asyncio.start_server(socket_server, '127.0.0.1', 8080)
 
 
-if __name__ == "__main__":
-    trio.run(main)
+
+def main():
+    app = web.Application()
+    app.on_startup.append(_start_background_tasks)
+    app.add_routes([web.get('/ws', websocket_handler)])
+    web.run_app(app, host="127.0.0.1", port=8000)
+
+
+if __name__ == '__main__':
+    uvloop.install()
+    main()
