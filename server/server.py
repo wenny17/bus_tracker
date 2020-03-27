@@ -8,16 +8,18 @@ from entities import Bus, WindowBounds
 
 buses = {}
 
-
+i = 0
 async def listen_bus_route_data(request):
     """
     Get data about buses position from web socket
     """
+    global i
     web_socket = await request.accept()
     while True:
         try:
             bus_data = json.loads(await web_socket.get_message())
             buses[bus_data["busId"]] = Bus(**bus_data)
+            i += 1
         except ConnectionClosed:
             break
 
@@ -37,8 +39,11 @@ async def send_buses(web_socket, bounds):
 
 
 async def _talk_to_browser(web_socket, bounds):
+    global i
     while True:
         await send_buses(web_socket, bounds)
+        print(i)
+        i = 0
         await trio.sleep(1)
 
 

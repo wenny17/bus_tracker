@@ -1,4 +1,4 @@
-from sys import stderr
+import random
 import json
 from functools import partial
 import contextlib
@@ -27,18 +27,20 @@ async def send_updates(server_address, receive_channel):
 
 async def handle_dispatch(buses_per_route, routes_number, server_address, websocket_count=5, refresh_timeout=1):
     async with trio.open_nursery() as nursery:
-        send_channel, receive_channel = trio.open_memory_channel(0)
-        async with send_channel, receive_channel:
-            for route_info in load_routes(routes_number):
-                for bus_index in range(buses_per_route):
-                    route = get_route_generator(route_info["coordinates"])
-                    bus_id = generate_bus_id(route_info["name"], bus_index)
+        send_channels = []
+        for worker in range(websocket_count):
+            send_channel, receive_channel = trio.open_memory_channel(0)
+            send_channels.append(send_channel.clone())
+            nursery.start_soon(send_updates, server_address, receive_channel.clone())
 
-                    nursery.start_soon(run_bus, route, bus_id, route_info["name"], send_channel.clone(),
-                                       refresh_timeout)
+        for route_info in load_routes(routes_number):
+            for bus_index in range(buses_per_route):
+                route = get_route_generator(route_info["coordinates"])
+                bus_id = generate_bus_id(route_info["name"], bus_index)
+                send_channel = random.choice(send_channels)
 
-            for worker in range(websocket_count):
-                nursery.start_soon(send_updates, server_address, receive_channel.clone())
+                nursery.start_soon(run_bus, route, bus_id, route_info["name"], send_channel,
+                                   refresh_timeout)
 
 
 if __name__ == '__main__':
