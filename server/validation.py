@@ -17,8 +17,7 @@ class ValidationError(TypeError):
     pass
 
 
-def validate_data(data, schema):
-    json_data = json.loads(data)
+def validate_data(json_data, schema):
     try:
         jsonschema.validate(instance=json_data, schema=__schemes[schema.value])
     except jsonschema.exceptions.ValidationError:

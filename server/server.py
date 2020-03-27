@@ -5,29 +5,53 @@ import trio
 from trio_websocket import serve_websocket, ConnectionClosed
 
 from entities import Bus, WindowBounds
+from validation import validate_data, ValidationError, Schemes
+
 
 buses = {}
 
-i = 0
+
 async def listen_bus_route_data(request):
     """
     Get data about buses position from web socket
     """
-    global i
     web_socket = await request.accept()
     while True:
         try:
-            bus_data = json.loads(await web_socket.get_message())
-            buses[bus_data["busId"]] = Bus(**bus_data)
-            i += 1
+            data = await web_socket.get_message()
+            try:
+                bus_data = json.loads(data)
+            except json.JSONDecodeError:
+                await web_socket.send_message({"errors": ["Requires valid JSON"], "msgType": "Errors"})
+                continue
+            try:
+                # something like validation :) other solutions(especially with jsonschema) will be too slow
+                bus = Bus(**bus_data)
+            except TypeError:
+                await web_socket.send_message({"errors": ["Requires busId specified"], "msgType": "Errors"})
+            else:
+                buses.update({bus.busId: bus})
         except ConnectionClosed:
             break
 
 
-async def _listen_browser(web_socket, bounds):
+async def listen_browser(web_socket, bounds):
+    """
+    get windows bounds from front-end and update bounds: WindowBounds
+    """
     while True:
-        windows_bounds = json.loads(await web_socket.get_message())
-        bounds.update(**windows_bounds["data"])
+        data = await web_socket.get_message()
+        try:
+            json_data = json.loads(data)
+        except json.JSONDecodeError:
+            await web_socket.send_message({"errors": ["Requires valid JSON"], "msgType": "Errors"})
+            continue
+        try:
+            windows_bounds = validate_data(json_data, Schemes.WINDOW_BOUNDS_SCHEMA)
+        except ValidationError:
+            await web_socket.send_message({"errors": ["Requires msgType specified"], "msgType": "Errors"})
+        else:
+            bounds.update(**windows_bounds["data"])
 
 
 async def send_buses(web_socket, bounds):
@@ -38,12 +62,9 @@ async def send_buses(web_socket, bounds):
     }))
 
 
-async def _talk_to_browser(web_socket, bounds):
-    global i
+async def talk_to_browser(web_socket, bounds):
     while True:
         await send_buses(web_socket, bounds)
-        print(i)
-        i = 0
         await trio.sleep(1)
 
 
@@ -52,8 +73,8 @@ async def handle_browser_connection(request):
     web_socket = await request.accept()
     try:
         async with trio.open_nursery() as nursery:
-            nursery.start_soon(_listen_browser, web_socket, bounds)
-            nursery.start_soon(_talk_to_browser, web_socket, bounds)
+            nursery.start_soon(listen_browser, web_socket, bounds)
+            nursery.start_soon(talk_to_browser, web_socket, bounds)
     except ConnectionClosed:
         await trio.sleep(1)
 
