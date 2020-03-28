@@ -1,5 +1,4 @@
 import dataclasses
-import json
 
 MIN_LATITUDE = -90
 MAX_LATITUDE = 90

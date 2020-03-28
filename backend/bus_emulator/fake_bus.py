@@ -6,8 +6,8 @@ import contextlib
 import trio
 from trio_websocket import open_websocket_url
 
-from args import get_args
-from tools import load_routes, get_route_generator, generate_bus_id, reconnect
+from backend.bus_emulator.args import get_args
+from backend.bus_emulator.tools import load_routes, get_route_generator, generate_bus_id, reconnect
 
 
 async def run_bus(route, bus_id, route_name, send_channel, timeout=1):

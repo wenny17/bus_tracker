@@ -1,10 +1,11 @@
 import json
 from enum import Enum
+import os
 
 import jsonschema
 
 
-with open("schemes.json") as f:
+with open(os.path.join(os.path.dirname(os.path.realpath(__file__)), "schemes.json")) as f:
     __schemes = json.load(f)
 
 

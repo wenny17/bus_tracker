@@ -4,19 +4,18 @@ from functools import partial
 import trio
 from trio_websocket import serve_websocket, ConnectionClosed
 
-from entities import Bus, WindowBounds
-from validation import validate_data, ValidationError, Schemes
-from args import get_args
+from backend.entities import Bus, WindowBounds
+from backend.validation import validate_data, ValidationError, Schemes
+from backend.args import get_args
 
 
 buses = {}
 
-i = 0
+
 async def listen_bus_route_data(request):
     """
     Get data about buses position from web socket
     """
-    global i
     web_socket = await request.accept()
     while True:
         try:
@@ -24,16 +23,15 @@ async def listen_bus_route_data(request):
             try:
                 bus_data = json.loads(data)
             except json.JSONDecodeError:
-                await web_socket.send_message({"errors": ["Requires valid JSON"], "msgType": "Errors"})
+                await web_socket.send_message(json.dumps({"errors": ["Requires valid JSON"], "msgType": "Errors"}))
                 continue
             try:
                 # something like validation :) other solutions(especially with jsonschema) will be too slow
                 bus = Bus(**bus_data)
             except TypeError:
-                await web_socket.send_message({"errors": ["Requires busId specified"], "msgType": "Errors"})
+                await web_socket.send_message(json.dumps({"errors": ["Requires busId specified"], "msgType": "Errors"}))
             else:
                 buses.update({bus.busId: bus})
-                i += 1
         except ConnectionClosed:
             break
 
@@ -47,12 +45,12 @@ async def listen_browser(web_socket, bounds):
         try:
             json_data = json.loads(data)
         except json.JSONDecodeError:
-            await web_socket.send_message({"errors": ["Requires valid JSON"], "msgType": "Errors"})
+            await web_socket.send_message(json.dumps({"errors": ["Requires valid JSON"], "msgType": "Errors"}))
             continue
         try:
             windows_bounds = validate_data(json_data, Schemes.WINDOW_BOUNDS_SCHEMA)
         except ValidationError:
-            await web_socket.send_message({"errors": ["Requires msgType specified"], "msgType": "Errors"})
+            await web_socket.send_message(json.dumps({"errors": ["Requires msgType specified"], "msgType": "Errors"}))
         else:
             bounds.update(**windows_bounds["data"])
 
@@ -66,11 +64,8 @@ async def send_buses(web_socket, bounds):
 
 
 async def talk_to_browser(web_socket, bounds):
-    global i
     while True:
         await send_buses(web_socket, bounds)
-        print(i)
-        i = 0
         await trio.sleep(1)
 
 

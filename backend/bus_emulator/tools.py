@@ -7,7 +7,7 @@ import functools
 import trio
 from trio_websocket._impl import HandshakeError, ConnectionClosed
 
-ROUTE_PATH = os.path.join(os.path.abspath(os.path.dirname(__file__)), "routes/")
+ROUTE_PATH = os.path.join(os.path.dirname(os.path.realpath(__file__)), "routes/")
 
 
 def load_routes(routes_number=None, directory_path=ROUTE_PATH):
