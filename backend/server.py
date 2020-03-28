@@ -6,15 +6,17 @@ from trio_websocket import serve_websocket, ConnectionClosed
 
 from entities import Bus, WindowBounds
 from validation import validate_data, ValidationError, Schemes
+from args import get_args
 
 
 buses = {}
 
-
+i = 0
 async def listen_bus_route_data(request):
     """
     Get data about buses position from web socket
     """
+    global i
     web_socket = await request.accept()
     while True:
         try:
@@ -31,6 +33,7 @@ async def listen_bus_route_data(request):
                 await web_socket.send_message({"errors": ["Requires busId specified"], "msgType": "Errors"})
             else:
                 buses.update({bus.busId: bus})
+                i += 1
         except ConnectionClosed:
             break
 
@@ -63,8 +66,11 @@ async def send_buses(web_socket, bounds):
 
 
 async def talk_to_browser(web_socket, bounds):
+    global i
     while True:
         await send_buses(web_socket, bounds)
+        print(i)
+        i = 0
         await trio.sleep(1)
 
 
@@ -79,9 +85,9 @@ async def handle_browser_connection(request):
         await trio.sleep(1)
 
 
-async def main():
-    open_data_socket = partial(serve_websocket, listen_bus_route_data, "127.0.0.1", 8080, ssl_context=None)
-    open_browser_socket = partial(serve_websocket, handle_browser_connection, "127.0.0.1", 8000, ssl_context=None)
+async def main(bus_port, browser_port):
+    open_data_socket = partial(serve_websocket, listen_bus_route_data, "127.0.0.1", bus_port, ssl_context=None)
+    open_browser_socket = partial(serve_websocket, handle_browser_connection, "127.0.0.1", browser_port, ssl_context=None)
 
     async with trio.open_nursery() as nursery:
         nursery.start_soon(open_data_socket)
@@ -89,4 +95,5 @@ async def main():
 
 
 if __name__ == "__main__":
-    trio.run(main)
+    args = get_args()
+    trio.run(main, args.bus_port, args.browser_port)
