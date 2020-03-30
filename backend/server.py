@@ -6,10 +6,10 @@ import contextlib
 import trio
 from trio_websocket import serve_websocket, ConnectionClosed
 
-from backend.entities import Bus, WindowBounds
-from backend.validation import validate_data, ValidationError, Schemes
-from backend.args import get_args
-from backend.logger_config import config
+from entities import Bus, WindowBounds
+from validation import validate_data, ValidationError, Schemes
+from args import get_args
+from logger_config import config
 
 logging.config.dictConfig(config)
 logger = logging.getLogger("app_logger")

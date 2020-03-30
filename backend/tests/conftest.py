@@ -3,7 +3,7 @@ from functools import partial
 from trio_websocket import serve_websocket, open_websocket_url
 import pytest
 
-from backend.server import listen_bus_route_data, handle_browser_connection
+from server import listen_bus_route_data, handle_browser_connection
 
 
 @pytest.fixture(scope="function")

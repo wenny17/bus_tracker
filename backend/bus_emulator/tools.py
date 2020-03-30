@@ -8,7 +8,7 @@ import logging.config
 import trio
 from trio_websocket._impl import HandshakeError, ConnectionClosed
 
-from backend.logger_config import config
+from logger_config import config
 
 ROUTE_PATH = os.path.join(os.path.dirname(os.path.realpath(__file__)), "routes/")
 

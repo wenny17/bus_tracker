@@ -7,9 +7,10 @@ import logging.config
 import trio
 from trio_websocket import open_websocket_url
 
-from backend.bus_emulator.args import get_args
-from backend.bus_emulator.tools import load_routes, get_route_generator, generate_bus_id, reconnect
-from backend.logger_config import config
+from args import get_args
+from tools import load_routes, get_route_generator, generate_bus_id, reconnect
+from logger_config import config
+
 
 logging.config.dictConfig(config)
 logger = logging.getLogger("app_logger")
@@ -52,7 +53,7 @@ async def handle_dispatch(buses_per_route, routes_number, server_address, websoc
 if __name__ == '__main__':
     args = get_args()
 
-    logger.disabled = not args.verbose
+    #logger.disabled = not args.verbose
 
     partial_handle_dispatch = partial(
         handle_dispatch,
