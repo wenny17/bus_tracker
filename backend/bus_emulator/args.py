@@ -49,13 +49,6 @@ def get_args() -> argparse.Namespace:
     )
 
     parser.add_argument(
-        "--emulator_id",
-        type=int,
-        default=0,
-        help=""
-    )
-
-    parser.add_argument(
         "-t",
         "--refresh_timeout",
         type=float,
@@ -64,8 +57,8 @@ def get_args() -> argparse.Namespace:
     )
 
     parser.add_argument(
-        "-l",
-        "--logging",
+        "-v",
+        "--verbose",
         action='store_true',
         default=False,
         help="enable logging"

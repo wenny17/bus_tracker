@@ -3,11 +3,17 @@ import json
 import os
 import random
 import functools
+import logging.config
 
 import trio
 from trio_websocket._impl import HandshakeError, ConnectionClosed
 
+from backend.logger_config import config
+
 ROUTE_PATH = os.path.join(os.path.dirname(os.path.realpath(__file__)), "routes/")
+
+logging.config.dictConfig(config)
+logger = logging.getLogger("app_logger")
 
 
 def load_routes(routes_number=None, directory_path=ROUTE_PATH):
@@ -45,7 +51,7 @@ def reconnect(f):
                 await f(*args, **kwargs)
 
             except (HandshakeError, ConnectionClosed):
-                print("reconnect in 1sec...")
+                logger.debug("lost connection with server. Reconnect in 1sec...")
                 await trio.sleep(1)
             else:
                 await args[1].aclose()

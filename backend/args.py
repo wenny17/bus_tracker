@@ -22,8 +22,8 @@ def get_args() -> argparse.Namespace:
     )
 
     parser.add_argument(
-        "-l",
-        "--logging",
+        "-v",
+        "--verbose",
         action='store_true',
         default=False,
         help="enable logging"
