@@ -53,7 +53,7 @@ async def handle_dispatch(buses_per_route, routes_number, server_address, websoc
 if __name__ == '__main__':
     args = get_args()
 
-    #logger.disabled = not args.verbose
+    logger.disabled = not args.verbose
 
     partial_handle_dispatch = partial(
         handle_dispatch,
