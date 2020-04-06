@@ -9,11 +9,9 @@ from trio_websocket import open_websocket_url
 
 from args import get_args
 from tools import load_routes, get_route_generator, generate_bus_id, reconnect
-from logger_config import config
 
 
-logging.config.dictConfig(config)
-logger = logging.getLogger("app_logger")
+logger = logging.getLogger("emulator")
 
 
 async def run_bus(route, bus_id, route_name, send_channel, timeout=1):
@@ -51,9 +49,11 @@ async def handle_dispatch(buses_per_route, routes_number, server_address, websoc
 
 
 if __name__ == '__main__':
-    args = get_args()
+    args = get_args().parse_args()
 
-    logger.disabled = not args.verbose
+    logging.basicConfig(level=logging.ERROR, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    logging_level = logging.DEBUG if args.verbose else logging.WARNING
+    logger.setLevel(logging_level)
 
     partial_handle_dispatch = partial(
         handle_dispatch,

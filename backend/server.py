@@ -9,10 +9,9 @@ from trio_websocket import serve_websocket, ConnectionClosed
 from entities import Bus, WindowBounds
 from validation import validate_data, ValidationError, Schemes
 from args import get_args
-from logger_config import config
 
-logging.config.dictConfig(config)
-logger = logging.getLogger("app_logger")
+
+logger = logging.getLogger('server')
 
 buses = {}
 
@@ -24,7 +23,7 @@ async def listen_bus_route_data(request):
     web_socket = await request.accept()
     logging.debug("accept connection for bus data")
     while True:
-        try:
+        with contextlib.suppress(ConnectionClosed):
             data = await web_socket.get_message()
             try:
                 bus_data = json.loads(data)
@@ -40,8 +39,6 @@ async def listen_bus_route_data(request):
                 await web_socket.send_message(json.dumps({"errors": ["Requires busId specified"], "msgType": "Errors"}))
             else:
                 buses.update({bus.busId: bus})
-        except ConnectionClosed:
-            break
     logger.debug("end bus data connection")
 
 
@@ -87,17 +84,16 @@ async def handle_browser_connection(request):
     logger.debug("accept connection with new user")
     bounds = WindowBounds()
     web_socket = await request.accept()
-    try:
+    with contextlib.suppress(ConnectionClosed):
         async with trio.open_nursery() as nursery:
             nursery.start_soon(listen_browser, web_socket, bounds)
             nursery.start_soon(talk_to_browser, web_socket, bounds)
-    except ConnectionClosed:
-        logger.debug("lost connection with user")
+    logger.debug("lost connection with user")
 
 
-async def main(bus_port, browser_port):
-    open_data_socket = partial(serve_websocket, listen_bus_route_data, "127.0.0.1", bus_port, ssl_context=None)
-    open_browser_socket = partial(serve_websocket, handle_browser_connection, "127.0.0.1", browser_port, ssl_context=None)
+async def main(bus_port, browser_port, host):
+    open_data_socket = partial(serve_websocket, listen_bus_route_data, host, bus_port, ssl_context=None)
+    open_browser_socket = partial(serve_websocket, handle_browser_connection, host, browser_port, ssl_context=None)
 
     async with trio.open_nursery() as nursery:
         nursery.start_soon(open_data_socket)
@@ -105,9 +101,11 @@ async def main(bus_port, browser_port):
 
 
 if __name__ == "__main__":
-    args = get_args()
+    args = get_args().parse_args()
 
-    logger.disabled = not args.verbose
+    logging.basicConfig(level=logging.ERROR, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    logging_level = logging.DEBUG if args.verbose else logging.WARNING
+    logger.setLevel(logging_level)
 
     with contextlib.suppress(KeyboardInterrupt):
-        trio.run(main, args.bus_port, args.browser_port)
+        trio.run(main, args.bus_port, args.browser_port, args.host)
