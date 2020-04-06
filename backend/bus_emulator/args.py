@@ -6,15 +6,10 @@ SERVER_ADDRESS = 'ws://127.0.0.1:8080'
 BUSES_PER_ROUTE = 2
 WEBSOCKET_COUNT = 5
 UPDATE_TIMEOUT = 1
-
-try:
-    ROUTES_NUMBER = len(os.listdir(os.path.join(os.path.dirname(os.path.realpath(__file__)), "routes/")))
-except FileNotFoundError as e:
-    message = "Add the 'routes/' directory  which contains the buses coordinates data"
-    raise type(e)(e.strerror + "\n\t" + message)
+ROUTES_NUMBER = 595
 
 
-def get_args() -> argparse.Namespace:
+def get_args():
     parser = argparse.ArgumentParser()
 
     parser.add_argument(
@@ -64,4 +59,4 @@ def get_args() -> argparse.Namespace:
         help="enable logging"
     )
 
-    return parser.parse_args()
+    return parser

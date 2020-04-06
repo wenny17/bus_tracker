@@ -2,9 +2,10 @@ import argparse
 
 RECEIVE_PORT = 8080
 SEND_PORT = 8000
+HOST = '127.0.0.1'
 
 
-def get_args() -> argparse.Namespace:
+def get_args():
     parser = argparse.ArgumentParser()
 
     parser.add_argument(
@@ -12,6 +13,13 @@ def get_args() -> argparse.Namespace:
         type=int,
         default=RECEIVE_PORT,
         help="port for receiving data"
+    )
+
+    parser.add_argument(
+        "-host",
+        type=str,
+        default=HOST,
+        help="listen host"
     )
 
     parser.add_argument(
@@ -29,4 +37,4 @@ def get_args() -> argparse.Namespace:
         help="enable logging"
     )
 
-    return parser.parse_args()
+    return parser
