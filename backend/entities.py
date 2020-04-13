@@ -31,4 +31,5 @@ class WindowBounds:
         self.west_lng = west_lng
 
     def is_inside(self, lat, lng):
-        return self.south_lat < lat < self.north_lat and self.west_lng < lng < self.east_lng
+        return self.south_lat < lat < self.north_lat and \
+               self.west_lng < lng < self.east_lng

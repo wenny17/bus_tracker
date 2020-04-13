@@ -5,7 +5,7 @@ SEND_PORT = 8000
 HOST = '127.0.0.1'
 
 
-def get_args():
+def get_argparser():
     parser = argparse.ArgumentParser()
 
     parser.add_argument(

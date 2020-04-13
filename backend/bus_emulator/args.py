@@ -1,5 +1,4 @@
 import argparse
-import os
 
 
 SERVER_ADDRESS = 'ws://127.0.0.1:8080'
@@ -9,7 +8,7 @@ UPDATE_TIMEOUT = 1
 ROUTES_NUMBER = 595
 
 
-def get_args():
+def get_argparser():
     parser = argparse.ArgumentParser()
 
     parser.add_argument(

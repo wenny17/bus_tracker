@@ -9,7 +9,9 @@ import trio
 from trio_websocket._impl import HandshakeError, ConnectionClosed
 
 
-ROUTE_PATH = os.path.join(os.path.dirname(os.path.realpath(__file__)), "routes")
+ROUTE_PATH = os.path.join(
+    os.path.dirname(os.path.realpath(__file__)), "routes"
+)
 
 logger = logging.getLogger('emulator').getChild(__name__)
 
@@ -44,12 +46,16 @@ def reconnect(f):
         while True:
             try:
                 if not isinstance(args[1], trio.MemoryReceiveChannel):
-                    raise TypeError("expected trio.MemoryReceiveChannel instance")
+                    raise TypeError(
+                        "expected trio.MemoryReceiveChannel instance"
+                    )
 
                 await f(*args, **kwargs)
 
             except (HandshakeError, ConnectionClosed):
-                logger.warning("lost connection with server. Reconnect in 1sec...")
+                logger.warning(
+                    "lost connection with server. Reconnect in 1sec..."
+                )
                 await trio.sleep(1)
             else:
                 await args[1].aclose()

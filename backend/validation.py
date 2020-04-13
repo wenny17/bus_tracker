@@ -4,8 +4,9 @@ import os
 
 import jsonschema
 
+BASE_DIR = os.path.dirname(os.path.realpath(__file__))
 
-with open(os.path.join(os.path.dirname(os.path.realpath(__file__)), "schemes.json")) as f:
+with open(os.path.join(BASE_DIR, "schemes.json")) as f:
     __schemes = json.load(f)
 
 
