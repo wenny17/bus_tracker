@@ -31,7 +31,7 @@ def coordinate_generator(coordinates, offset=0):
         offset = 0
 
 
-def get_route_generator(route):
+def get_coords_generator(route):
     offset = random.randint(0, len(route))
     return coordinate_generator(route, offset)
 
@@ -45,19 +45,10 @@ def reconnect(f):
     async def wrapper(*args, **kwargs):
         while True:
             try:
-                if not isinstance(args[1], trio.MemoryReceiveChannel):
-                    raise TypeError(
-                        "expected trio.MemoryReceiveChannel instance"
-                    )
-
                 await f(*args, **kwargs)
-
             except (HandshakeError, ConnectionClosed):
                 logger.warning(
                     "lost connection with server. Reconnect in 1sec..."
                 )
                 await trio.sleep(1)
-            else:
-                await args[1].aclose()
-
     return wrapper

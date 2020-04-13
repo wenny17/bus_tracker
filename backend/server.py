@@ -105,18 +105,18 @@ async def handle_browser_connection(request):
 
 
 async def main(bus_port, browser_port, host):
-    open_data_socket = partial(
+    serve_data_receiving = partial(
         serve_websocket, listen_bus_route_data,
         host, bus_port, ssl_context=None
     )
-    open_browser_socket = partial(
+    serve_browser_connection = partial(
         serve_websocket, handle_browser_connection,
         host, browser_port, ssl_context=None
     )
 
     async with trio.open_nursery() as nursery:
-        nursery.start_soon(open_data_socket)
-        nursery.start_soon(open_browser_socket)
+        nursery.start_soon(serve_data_receiving)
+        nursery.start_soon(serve_browser_connection)
 
 
 if __name__ == "__main__":
